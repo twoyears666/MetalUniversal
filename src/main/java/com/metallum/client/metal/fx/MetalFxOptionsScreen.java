@@ -54,32 +54,19 @@ public final class MetalFxOptionsScreen extends Screen {
         // 空白间隔
         column.addChild(new StringWidget(CONTENT_WIDTH, SPACING, Component.empty(), this.font));
 
-        // 空间超分 — 循环按钮（OFF / QUALITY / BALANCED / PERFORMANCE / ULTRA_PERFORMANCE）
-        CycleButton<MetalFxConfig.SpatialMode> spatialButton =
-                CycleButton.<MetalFxConfig.SpatialMode>builder(MetalFxOptionsScreen::spatialModeLabel, cfg.spatialMode())
-                        .withValues(MetalFxConfig.SpatialMode.values())
-                        .create(Component.translatable("metallum.fx.options.spatial"),
-                                (button, mode) -> cfg.setSpatialMode(mode));
-        spatialButton.setWidth(CONTENT_WIDTH);
-        column.addChild(spatialButton);
-
-        // 时间超分 — 开关（OFF / AUTO）
-        CycleButton<MetalFxConfig.TemporalUpscalingMode> temporalButton =
-                CycleButton.<MetalFxConfig.TemporalUpscalingMode>builder(MetalFxOptionsScreen::temporalModeLabel, cfg.temporalMode())
-                        .withValues(MetalFxConfig.TemporalUpscalingMode.values())
-                        .create(Component.translatable("metallum.fx.options.temporal"),
-                                (button, mode) -> cfg.setTemporalMode(mode));
-        temporalButton.setWidth(CONTENT_WIDTH);
-        column.addChild(temporalButton);
-
-        // 帧插值 — 开关（OFF / AUTO）
-        CycleButton<MetalFxConfig.FrameInterpolationMode> interpButton =
-                CycleButton.<MetalFxConfig.FrameInterpolationMode>builder(MetalFxOptionsScreen::interpModeLabel, cfg.interpolationMode())
-                        .withValues(MetalFxConfig.FrameInterpolationMode.values())
-                        .create(Component.translatable("metallum.fx.options.frame_interpolation"),
-                                (button, mode) -> cfg.setInterpolationMode(mode));
-        interpButton.setWidth(CONTENT_WIDTH);
-        column.addChild(interpButton);
+        // 统一 MetalFX 档位。只展示当前设备实际支持的能力组合。
+        MetalFxConfig cfg = MetalFxConfig.get();
+        List<MetalFxConfig.Profile> profiles = profileValues(cfg);
+        CycleButton<MetalFxConfig.Profile> profileButton =
+                CycleButton.<MetalFxConfig.Profile>builder(MetalFxOptionsScreen::profileLabel, cfg.profile())
+                        .withValues(profiles)
+                        .create(Component.translatable("metallum.fx.options.profile"),
+                                (button, profile) -> cfg.setProfile(profile));
+        profileButton.setWidth(CONTENT_WIDTH);
+        profileButton.active = cfg.spatialSupported()
+                || cfg.temporalSupported()
+                || cfg.interpolationSupported();
+        column.addChild(profileButton);
 
         // 空白间隔
         column.addChild(new StringWidget(CONTENT_WIDTH, SPACING, Component.empty(), this.font));
@@ -145,6 +132,31 @@ public final class MetalFxOptionsScreen extends Screen {
         }
 
         return lines;
+    }
+
+    private static List<MetalFxConfig.Profile> profileValues(MetalFxConfig cfg) {
+        List<MetalFxConfig.Profile> values = new ArrayList<>();
+        values.add(MetalFxConfig.Profile.OFF);
+        boolean upscaling = cfg.spatialSupported() || cfg.temporalSupported();
+        if (cfg.interpolationSupported()) {
+            values.add(MetalFxConfig.Profile.FRAME_GENERATION);
+        }
+        if (upscaling) {
+            values.add(MetalFxConfig.Profile.UPSCALING);
+        }
+        if (upscaling && cfg.interpolationSupported()) {
+            values.add(MetalFxConfig.Profile.FULL);
+        }
+        return values;
+    }
+
+    private static Component profileLabel(MetalFxConfig.Profile profile) {
+        return Component.translatable(switch (profile) {
+            case OFF -> "metallum.fx.profile.off";
+            case FRAME_GENERATION -> "metallum.fx.profile.frame_generation";
+            case UPSCALING -> "metallum.fx.profile.upscaling";
+            case FULL -> "metallum.fx.profile.full";
+        });
     }
 
     private static Component spatialModeLabel(MetalFxConfig.SpatialMode mode) {
