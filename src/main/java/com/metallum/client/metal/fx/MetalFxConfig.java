@@ -96,6 +96,13 @@ public final class MetalFxConfig {
         AUTO
     }
 
+    public enum Profile {
+        OFF,
+        FRAME_GENERATION,
+        UPSCALING,
+        FULL
+    }
+
     private static final String CONFIG_FILE_NAME = "metallum_fx.properties";
     private static final String KEY_SPATIAL = "spatialUpscaling";
     private static final String KEY_INTERP = "frameInterpolation";
@@ -145,6 +152,41 @@ public final class MetalFxConfig {
 
     public void setAcknowledged(boolean acknowledged) {
         this.acknowledged = acknowledged;
+    }
+
+    public Profile profile() {
+        boolean upscaling = spatialMode.isEnabled() || temporalMode == TemporalUpscalingMode.AUTO;
+        boolean frameGeneration = interpolationMode != FrameInterpolationMode.OFF;
+        if (frameGeneration && upscaling) return Profile.FULL;
+        if (frameGeneration) return Profile.FRAME_GENERATION;
+        if (upscaling) return Profile.UPSCALING;
+        return Profile.OFF;
+    }
+
+    public void setProfile(Profile profile) {
+        if (profile == null) return;
+        switch (profile) {
+            case OFF -> {
+                spatialMode = SpatialMode.OFF;
+                temporalMode = TemporalUpscalingMode.OFF;
+                interpolationMode = FrameInterpolationMode.OFF;
+            }
+            case FRAME_GENERATION -> {
+                spatialMode = SpatialMode.OFF;
+                temporalMode = TemporalUpscalingMode.OFF;
+                interpolationMode = FrameInterpolationMode.AUTO;
+            }
+            case UPSCALING -> {
+                spatialMode = SpatialMode.BALANCED;
+                temporalMode = TemporalUpscalingMode.AUTO;
+                interpolationMode = FrameInterpolationMode.OFF;
+            }
+            case FULL -> {
+                spatialMode = SpatialMode.BALANCED;
+                temporalMode = TemporalUpscalingMode.AUTO;
+                interpolationMode = FrameInterpolationMode.AUTO;
+            }
+        }
     }
 
     public void setSpatialMode(SpatialMode mode) {
