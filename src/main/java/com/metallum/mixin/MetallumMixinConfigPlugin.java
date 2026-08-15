@@ -16,6 +16,8 @@ public final class MetallumMixinConfigPlugin implements IMixinConfigPlugin {
     private static final String PREFERRED_GRAPHICS_API_MIXIN = "com.metallum.mixin.render.PreferredGraphicsApiMixin";
     private static final String PREFERRED_GRAPHICS_BACKEND_OPTION = "preferredGraphicsBackend";
     private static final String DEFAULT_GRAPHICS_BACKEND = "\"default\"";
+    private static final String VIDEO_SETTINGS_METALFX_MIXIN =
+            "com.metallum.mixin.render.VideoSettingsScreenMixin";
 
     /**
      * Mixins that should always be applied on macOS, regardless of which
@@ -31,12 +33,19 @@ public final class MetallumMixinConfigPlugin implements IMixinConfigPlugin {
     );
 
     private boolean isMacOs;
+    private boolean isApplePlatform;
     private boolean isDefaultGraphicsApi;
 
     @Override
     public void onLoad(String mixinPackage) {
         String osName = System.getProperty("os.name", "");
-        this.isMacOs = osName.toLowerCase(Locale.ROOT).contains("mac");
+        String normalizedOs = osName.toLowerCase(Locale.ROOT);
+        this.isMacOs = normalizedOs.contains("mac");
+        this.isApplePlatform = this.isMacOs
+                || normalizedOs.contains("ios")
+                || normalizedOs.contains("darwin")
+                || System.getProperty("pojav.launcher") != null
+                || System.getProperty("org.pojavlauncher") != null;
         this.isDefaultGraphicsApi = isDefaultGraphicsApiSelected();
     }
 
@@ -47,6 +56,9 @@ public final class MetallumMixinConfigPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
+        if (VIDEO_SETTINGS_METALFX_MIXIN.equals(mixinClassName)) {
+            return this.isApplePlatform;
+        }
         if (!this.isMacOs) {
             return false;
         }
