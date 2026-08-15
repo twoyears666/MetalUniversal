@@ -15,5 +15,11 @@
   "metallum.options.metalfx.frame_generation": "Metal 帧生成",
   "metallum.options.metalfx.frame_generation.tooltip": "在受支持的 macOS 系统上，为相邻渲染帧生成一个插值帧。关闭设置界面后生效。",
   "metallum.options.metal_hud": "Metal 性能 HUD",
-  "metallum.options.metal_hud.tooltip": "显示 Apple 的 Metal 性能叠加层。修改此选项后需要重启游戏。"
+  "metallum.options.metal_hud.tooltip": "显示 Apple 的 Metal 性能叠加层。修改此选项后需要重启游戏。",
+  "metallum.options.metalfx.profile": "MetalFX 档位",
+  "metallum.options.metalfx.profile.tooltip": "统一切换 MetalFX：关闭、超帧、超分或火力全开。修改后立即生效。",
+  "metallum.options.metalfx.profile.off": "关闭",
+  "metallum.options.metalfx.profile.frame_generation": "超帧",
+  "metallum.options.metalfx.profile.upscaling": "超分",
+  "metallum.options.metalfx.profile.full": "火力全开"
 }
