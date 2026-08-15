@@ -13,6 +13,7 @@ import net.minecraft.resources.Identifier;
 
 /** Sodium 0.9 configuration page for the startup-owned MetalFX renderer. */
 public final class MetalFxSodiumConfig implements ConfigEntryPoint {
+    private static final Identifier PROFILE_ID = Identifier.fromNamespaceAndPath("metallum", "metalfx_profile");
     private static final Identifier MODE_ID = Identifier.fromNamespaceAndPath("metallum", "metalfx_mode");
     private static final Identifier SCALE_ID = Identifier.fromNamespaceAndPath("metallum", "metalfx_scale");
     private static final Identifier REACTIVE_MASK_ID = Identifier.fromNamespaceAndPath("metallum", "metalfx_transparency_reactive");
@@ -32,6 +33,7 @@ public final class MetalFxSodiumConfig implements ConfigEntryPoint {
 
         OptionGroupBuilder quality = builder.createOptionGroup()
                 .setName(Component.translatable("metallum.options.metalfx.group"));
+        quality.addOption(profileOption(builder));
         quality.addOption(modeOption(builder));
         quality.addOption(scaleOption(builder));
         quality.addOption(transparencyReactiveOption(builder));
@@ -39,6 +41,18 @@ public final class MetalFxSodiumConfig implements ConfigEntryPoint {
         quality.addOption(metalHudOption(builder));
         page.addOptionGroup(quality);
         modOptions.addPage(page);
+    }
+
+    private static EnumOptionBuilder<MetalFxConfig.Profile> profileOption(final ConfigBuilder builder) {
+        return builder.createEnumOption(PROFILE_ID, MetalFxConfig.Profile.class)
+                .setName(Component.translatable("metallum.options.metalfx.profile"))
+                .setTooltip(Component.translatable("metallum.options.metalfx.profile.tooltip"))
+                .setElementNameProvider(MetalFxSodiumConfig::profileLabel)
+                .setDefaultValue(MetalFxConfig.Profile.OFF)
+                .setStorageHandler(MetalFxConfig::flushPersistent)
+                .setImpact(net.caffeinemc.mods.sodium.api.config.option.OptionImpact.HIGH)
+                .setEnabled(!MetalFxConfig.hasProfileSystemPropertyOverride())
+                .setBinding(MetalFxConfig::setProfileFromSodium, MetalFxConfig::configuredProfileForSodium);
     }
 
     private static EnumOptionBuilder<MetalFxConfig.Mode> modeOption(final ConfigBuilder builder) {
@@ -123,6 +137,15 @@ public final class MetalFxSodiumConfig implements ConfigEntryPoint {
                 .setFlags(OptionFlag.REQUIRES_GAME_RESTART)
                 .setEnabled(!MetalFxConfig.hasSystemPropertyOverride(MetalFxConfig.METAL_HUD_PROPERTY))
                 .setBinding(MetalFxConfig::setMetalHudFromSodium, MetalFxConfig::configuredMetalHudForSodium);
+    }
+
+    private static Component profileLabel(final MetalFxConfig.Profile profile) {
+        return Component.translatable(switch (profile) {
+            case OFF -> "metallum.options.metalfx.profile.off";
+            case FRAME_GENERATION -> "metallum.options.metalfx.profile.frame_generation";
+            case UPSCALING -> "metallum.options.metalfx.profile.upscaling";
+            case FULL -> "metallum.options.metalfx.profile.full";
+        });
     }
 
     private static Component modeLabel(final MetalFxConfig.Mode mode) {
