@@ -12,19 +12,25 @@ public class Metallum implements ModInitializer, PreLaunchEntrypoint {
 
     // This logger is used to write text to the console and the log file.
     // It is considered best practice to use your mod id as the logger's name.
-    // That way, it's clear which mod wrote info, warnings, and errors.
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     @Override
     public void onPreLaunch() {
-        // PreLaunch 是 Fabric Loader 提供的最早入口点，在游戏启动之前调用，
-        // 早于任何 Minecraft 类（包括 VulkanBackend、GlBackend、MetalBackend）被加载。
-        // 必须在这里设置 Configuration.SPVC_LIBRARY_NAME，因为 LWJGL 的 Spvc.SPVC 是
-        // static final 字段，类初始化时一次性读取配置并缓存，之后修改无效。
-        // 如果等到 onInitialize 或 MetalBackend.createDevice，Spvc 类可能已被
-        // VulkanBackend 的类加载触发初始化，配置就来不及了。
-        // 非 iOS 环境下此方法立即返回（isIOS() 检查）。
-        MetalNativeBridge.ensureSpvcLibraryConfigured();
+        // PreLaunch 是 Fabric Loader 提供的最早入口点，在游戏启动之前调用。
+        // iOS 上的 native dylib 只有在已嵌入并签名，或设备启用了 JIT 时才能加载。
+        // 因此 native bridge 不可用不能阻止普通后端启动；真正选择 Metal 时，
+        // Metal backend 会在使用 native bridge 时给出明确错误。
+        try {
+            // 必须尽早执行：LWJGL 的 Spvc.SPVC 会在类初始化时缓存库配置。
+            MetalNativeBridge.ensureSpvcLibraryConfigured();
+        } catch (Throwable throwable) {
+            LOGGER.warn(
+                    "Metal native bridge is unavailable; continuing without the Metal backend. "
+                            + "On iOS, embed a signed libmetallum.dylib in the launcher Frameworks "
+                            + "directory or enable JIT before selecting Metal.",
+                    throwable
+            );
+        }
     }
 
     @Override
