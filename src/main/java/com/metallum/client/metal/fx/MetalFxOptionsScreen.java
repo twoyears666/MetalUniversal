@@ -55,7 +55,6 @@ public final class MetalFxOptionsScreen extends Screen {
         column.addChild(new StringWidget(CONTENT_WIDTH, SPACING, Component.empty(), this.font));
 
         // 统一 MetalFX 档位。只展示当前设备实际支持的能力组合。
-        MetalFxConfig cfg = MetalFxConfig.get();
         List<MetalFxConfig.Profile> profiles = profileValues(cfg);
         CycleButton<MetalFxConfig.Profile> profileButton =
                 CycleButton.<MetalFxConfig.Profile>builder(MetalFxOptionsScreen::profileLabel, cfg.profile())
