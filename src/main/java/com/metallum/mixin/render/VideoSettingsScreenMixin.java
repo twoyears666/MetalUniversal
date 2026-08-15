@@ -1,0 +1,46 @@
+package com.metallum.mixin.render;
+
+import com.metallum.client.metal.fx.MetalFxConfig;
+import com.metallum.client.metal.fx.MetalFxWarningScreen;
+import net.minecraft.client.gui.GuiEventListener;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Renderable;
+import net.minecraft.client.gui.screens.options.VideoSettingsScreen;
+import net.minecraft.network.chat.Component;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+/**
+ * Adds the MetalFX entry point to vanilla Video Settings.
+ *
+ * <p>The entry remains visible when MetalFX is unavailable so the user can
+ * inspect the capability-aware screen, but it is disabled when no MetalFX
+ * feature is supported by the active device.</p>
+ */
+@Mixin(VideoSettingsScreen.class)
+abstract class VideoSettingsScreenMixin {
+    @Shadow
+    protected abstract <T extends GuiEventListener & Renderable> T addRenderableWidget(T widget);
+
+    @Inject(method = "init", at = @At("TAIL"))
+    private void metallum$addMetalFxButton(final CallbackInfo ci) {
+        MetalFxConfig config = MetalFxConfig.get();
+        boolean supported = config.spatialSupported()
+                || config.temporalSupported()
+                || config.interpolationSupported();
+
+        VideoSettingsScreen screen = (VideoSettingsScreen) (Object) this;
+        Button button = Button.builder(
+                        Component.translatable("metallum.fx.button"),
+                        ignored -> MetalFxWarningScreen.openIfNotAcknowledged(screen)
+                )
+                .pos(screen.width / 2 - 100, screen.height - 52)
+                .size(200, 20)
+                .build();
+        button.active = supported;
+        this.addRenderableWidget(button);
+    }
+}
