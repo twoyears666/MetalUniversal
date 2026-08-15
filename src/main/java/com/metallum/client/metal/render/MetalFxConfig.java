@@ -42,6 +42,13 @@ final class MetalFxConfig {
         AUTO
     }
 
+    enum Profile {
+        OFF,
+        FRAME_GENERATION,
+        UPSCALING,
+        FULL
+    }
+
     enum Scale {
         HALF("50%", 50, 0.5F),
         QUALITY("67%", 67, 0.67F),
@@ -179,6 +186,53 @@ final class MetalFxConfig {
                 : Scale.fromRatio(parseScale(override, defaults.scalePercent / 100.0F));
     }
 
+    static Profile configuredProfileForSodium() {
+        PersistentSettings settings = persistentSettings();
+        if (settings.frameGeneration) {
+            return settings.scalePercent >= 84 ? Profile.FRAME_GENERATION : Profile.FULL;
+        }
+        return settings.mode == Mode.OFF ? Profile.OFF : Profile.UPSCALING;
+    }
+
+    static void setProfileFromSodium(final Profile profile) {
+        if (profile == null) return;
+        updatePersistent(settings -> {
+            Mode mode;
+            int scalePercent;
+            boolean frameGeneration;
+            switch (profile) {
+                case OFF -> {
+                    mode = Mode.OFF;
+                    scalePercent = settings.scalePercent;
+                    frameGeneration = false;
+                }
+                case FRAME_GENERATION -> {
+                    mode = Mode.TEMPORAL;
+                    scalePercent = 100;
+                    frameGeneration = true;
+                }
+                case UPSCALING -> {
+                    mode = Mode.AUTO;
+                    scalePercent = 67;
+                    frameGeneration = false;
+                }
+                case FULL -> {
+                    mode = Mode.TEMPORAL;
+                    scalePercent = 67;
+                    frameGeneration = true;
+                }
+                default -> throw new IllegalStateException("Unhandled MetalFX profile " + profile);
+            }
+            return new PersistentSettings(
+                    mode,
+                    scalePercent,
+                    settings.transparencyReactiveMask,
+                    frameGeneration,
+                    settings.metalHud
+            );
+        });
+    }
+
     static boolean configuredTransparencyReactiveMaskForSodium() {
         return parseBoolean(
                 System.getProperty(REACTIVE_MASK_PROPERTY), persistentSettings().transparencyReactiveMask
@@ -213,6 +267,12 @@ final class MetalFxConfig {
 
     static boolean hasSystemPropertyOverride(final String property) {
         return System.getProperty(property) != null;
+    }
+
+    static boolean hasProfileSystemPropertyOverride() {
+        return hasSystemPropertyOverride(MODE_PROPERTY)
+                || hasSystemPropertyOverride(SCALE_PROPERTY)
+                || hasSystemPropertyOverride(FRAME_GENERATION_PROPERTY);
     }
 
     static void setModeFromSodium(final Mode mode) {
