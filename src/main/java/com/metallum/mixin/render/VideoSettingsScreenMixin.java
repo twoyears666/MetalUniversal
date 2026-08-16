@@ -2,10 +2,10 @@ package com.metallum.mixin.render;
 
 import com.metallum.client.metal.fx.MetalFxConfig;
 import com.metallum.client.metal.fx.MetalFxWarningScreen;
-import net.minecraft.client.gui.Screen;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.options.VideoSettingsScreen;
 import net.minecraft.network.chat.Component;
 import org.spongepowered.asm.mixin.Mixin;
