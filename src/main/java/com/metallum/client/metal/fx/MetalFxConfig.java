@@ -178,12 +178,16 @@ public final class MetalFxConfig {
             }
             case UPSCALING -> {
                 spatialMode = SpatialMode.BALANCED;
-                temporalMode = TemporalUpscalingMode.AUTO;
+                // TemporalScaler is not enabled until the motion/depth
+                // texture pipeline has been validated on iOS/macOS.
+                temporalMode = TemporalUpscalingMode.OFF;
                 interpolationMode = FrameInterpolationMode.OFF;
             }
             case FULL -> {
                 spatialMode = SpatialMode.BALANCED;
-                temporalMode = TemporalUpscalingMode.AUTO;
+                // Keep FULL safe: spatial upscaling and frame interpolation
+                // are independent; the temporal path is currently disabled.
+                temporalMode = TemporalUpscalingMode.OFF;
                 interpolationMode = FrameInterpolationMode.AUTO;
             }
         }
@@ -198,7 +202,9 @@ public final class MetalFxConfig {
     }
 
     public void setTemporalMode(TemporalUpscalingMode mode) {
-        this.temporalMode = mode;
+        // TemporalScaler is intentionally disabled until its native texture
+        // dimensions are validated across device and drawable sizes.
+        this.temporalMode = TemporalUpscalingMode.OFF;
     }
 
     /**
@@ -218,9 +224,11 @@ public final class MetalFxConfig {
      * the spatial scaler (if active) or the source texture directly.
      */
     public boolean isTemporalUpscalingActive() {
-        return temporalMode == TemporalUpscalingMode.AUTO
-                && temporalSupported
-                && spatialMode.isEnabled();
+        // The current native temporal path can hit an Apple MetalFX
+        // depth/flow buffer assertion when the drawable is resized.
+        // Keep the setting available for future work, but use the validated
+        // spatial scaler until the motion/depth texture pipeline is fixed.
+        return false;
     }
 
     /**
@@ -335,7 +343,9 @@ public final class MetalFxConfig {
             }
             cfg.spatialMode = parseEnum(props.getProperty(KEY_SPATIAL), SpatialMode.OFF, SpatialMode.class);
             cfg.interpolationMode = parseEnum(props.getProperty(KEY_INTERP), FrameInterpolationMode.OFF, FrameInterpolationMode.class);
-            cfg.temporalMode = parseEnum(props.getProperty(KEY_TEMPORAL), TemporalUpscalingMode.OFF, TemporalUpscalingMode.class);
+            // Ignore legacy AUTO values from configs created before the
+            // temporal motion/depth path was made safe.
+            cfg.temporalMode = TemporalUpscalingMode.OFF;
             cfg.acknowledged = Boolean.parseBoolean(props.getProperty(KEY_ACKNOWLEDGED, "false"));
         }
         // Preserve previously-queried device capabilities across reloads so
