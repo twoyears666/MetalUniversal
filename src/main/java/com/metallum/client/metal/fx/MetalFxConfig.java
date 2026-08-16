@@ -1,6 +1,7 @@
 package com.metallum.client.metal.fx;
 
 import com.metallum.Metallum;
+import net.minecraft.client.Minecraft;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.loader.api.FabricLoader;
@@ -191,14 +192,17 @@ public final class MetalFxConfig {
                 interpolationMode = FrameInterpolationMode.AUTO;
             }
         }
+        requestRenderTargetRebuild();
     }
 
     public void setSpatialMode(SpatialMode mode) {
         this.spatialMode = mode;
+        requestRenderTargetRebuild();
     }
 
     public void setInterpolationMode(FrameInterpolationMode mode) {
         this.interpolationMode = mode;
+        requestRenderTargetRebuild();
     }
 
     public void setTemporalMode(TemporalUpscalingMode mode) {
@@ -360,6 +364,25 @@ public final class MetalFxConfig {
         cfg.deviceName = prev.deviceName;
         cfg.acknowledged = prev.acknowledged || cfg.acknowledged;
         INSTANCE = cfg;
+        requestRenderTargetRebuild();
+    }
+
+    /**
+     * Rebuilds Minecraft's main render targets after a MetalFX mode change.
+     * The Window mixin changes the internal framebuffer dimensions immediately;
+     * without this resize, the old full-size target remains bound and the
+     * next frame is rendered with mismatched dimensions, producing a zoomed
+     * and cropped image.
+     */
+    private static void requestRenderTargetRebuild() {
+        try {
+            Minecraft minecraft = Minecraft.getInstance();
+            if (minecraft != null) {
+                minecraft.resizeDisplay();
+            }
+        } catch (Throwable t) {
+            Metallum.LOGGER.debug("[MetalFX] render-target resize request skipped: {}", t.getMessage());
+        }
     }
 
     /**
