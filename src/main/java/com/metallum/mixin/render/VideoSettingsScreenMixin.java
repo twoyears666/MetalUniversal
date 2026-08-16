@@ -2,6 +2,7 @@ package com.metallum.mixin.render;
 
 import com.metallum.client.metal.fx.MetalFxConfig;
 import com.metallum.client.metal.fx.MetalFxWarningScreen;
+import net.minecraft.client.gui.Screen;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -16,11 +17,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /**
  * Adds the MetalFX entry point to vanilla Video Settings.
  *
- * <p>The entry remains visible when MetalFX is unavailable so the user can
- * inspect the capability-aware screen, but it is disabled when no MetalFX
- * feature is supported by the active device.</p>
+ * <p>This targets {@link Screen} because the widget-registration method is
+ * declared there and inherited by {@link VideoSettingsScreen}.</p>
  */
-@Mixin(VideoSettingsScreen.class)
+@Mixin(Screen.class)
 abstract class VideoSettingsScreenMixin {
     @Shadow
     protected int width;
@@ -33,6 +33,10 @@ abstract class VideoSettingsScreenMixin {
 
     @Inject(method = "init", at = @At("TAIL"))
     private void metallum$addMetalFxButton(final CallbackInfo ci) {
+        if (!((Object) this instanceof VideoSettingsScreen)) {
+            return;
+        }
+
         MetalFxConfig config = MetalFxConfig.get();
         boolean supported = config.spatialSupported()
                 || config.temporalSupported()
