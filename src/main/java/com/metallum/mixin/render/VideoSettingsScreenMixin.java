@@ -2,9 +2,9 @@ package com.metallum.mixin.render;
 
 import com.metallum.client.metal.fx.MetalFxConfig;
 import com.metallum.client.metal.fx.MetalFxWarningScreen;
-import net.minecraft.client.gui.GuiEventListener;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Renderable;
+import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.options.VideoSettingsScreen;
 import net.minecraft.network.chat.Component;
 import org.spongepowered.asm.mixin.Mixin;
@@ -23,6 +23,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(VideoSettingsScreen.class)
 abstract class VideoSettingsScreenMixin {
     @Shadow
+    protected int width;
+
+    @Shadow
+    protected int height;
+
+    @Shadow
     protected abstract <T extends GuiEventListener & Renderable> T addRenderableWidget(T widget);
 
     @Inject(method = "init", at = @At("TAIL"))
@@ -37,7 +43,7 @@ abstract class VideoSettingsScreenMixin {
                         Component.translatable("metallum.fx.button"),
                         ignored -> MetalFxWarningScreen.openIfNotAcknowledged(screen)
                 )
-                .pos(screen.width / 2 - 100, screen.height - 52)
+                .pos(this.width / 2 - 100, this.height - 52)
                 .size(200, 20)
                 .build();
         button.active = supported;
