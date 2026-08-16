@@ -3,9 +3,8 @@ package com.metallum.mixin.render;
 import com.metallum.client.metal.fx.MetalFxConfig;
 import com.metallum.client.metal.fx.MetalFxWarningScreen;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.Renderable;
-import net.minecraft.client.gui.components.events.GuiEventListener;
-import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.OptionsList;
+import net.minecraft.client.gui.screens.options.OptionsSubScreen;
 import net.minecraft.client.gui.screens.options.VideoSettingsScreen;
 import net.minecraft.network.chat.Component;
 import org.spongepowered.asm.mixin.Mixin;
@@ -15,21 +14,15 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Adds the MetalFX entry point to vanilla Video Settings.
+ * Adds the MetalFX entry point to the vanilla Video Settings options list.
  *
- * <p>This targets {@link Screen} because the widget-registration method is
- * declared there and inherited by {@link VideoSettingsScreen}.</p>
+ * <p>The button is inserted into the same scrollable list as the video
+ * quality options, so it never occupies the fixed position above Done.</p>
  */
-@Mixin(Screen.class)
+@Mixin(OptionsSubScreen.class)
 abstract class VideoSettingsScreenMixin {
     @Shadow
-    protected int width;
-
-    @Shadow
-    protected int height;
-
-    @Shadow
-    protected abstract <T extends GuiEventListener & Renderable> T addRenderableWidget(T widget);
+    protected OptionsList list;
 
     @Inject(method = "init", at = @At("TAIL"))
     private void metallum$addMetalFxButton(final CallbackInfo ci) {
@@ -47,10 +40,8 @@ abstract class VideoSettingsScreenMixin {
                         Component.translatable("metallum.fx.button"),
                         ignored -> MetalFxWarningScreen.openIfNotAcknowledged(screen)
                 )
-                .pos(this.width / 2 - 100, this.height - 52)
-                .size(200, 20)
                 .build();
         button.active = supported;
-        this.addRenderableWidget(button);
+        this.list.addBig(button);
     }
 }
