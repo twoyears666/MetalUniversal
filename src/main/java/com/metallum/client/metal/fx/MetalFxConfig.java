@@ -378,7 +378,13 @@ public final class MetalFxConfig {
         try {
             Minecraft minecraft = Minecraft.getInstance();
             if (minecraft != null) {
-                minecraft.resizeDisplay();
+                // Mappings for this Minecraft version do not expose a
+                // compile-time resizeDisplay() method. Use the mapped method
+                // reflectively when present, while keeping the build
+                // compatible with versions where it is named differently.
+                var resize = Minecraft.class.getDeclaredMethod("resizeDisplay");
+                resize.setAccessible(true);
+                resize.invoke(minecraft);
             }
         } catch (Throwable t) {
             Metallum.LOGGER.debug("[MetalFX] render-target resize request skipped: {}", t.getMessage());
